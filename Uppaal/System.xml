@@ -1,0 +1,501 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>// Place global declarations here.
+
+
+const int critical_max_hum = 65;
+const int critical_min_hum = 40;
+const int MAX_WAIT_TIME = 10;
+const int ASK_PERIOD = 5;
+const int WINTER = 0;
+const int SUMMER = 1;
+
+
+const int CAFETERIA=6;
+typedef int[0,CAFETERIA-1] c_id;
+
+const int MAX_CAPACITY = 1530;
+typedef int[0, MAX_CAPACITY] u_id;
+
+const int MAX_PEOPLE[c_id] = {40, 600, 290, 350, 150, 100};
+const int ROOM_DIM[c_id] = {140, 800, 400, 500, 700, 200};
+
+
+
+int temp_max;
+int temp_min;
+int hum_max;
+int time_ask=0;
+int timeout;
+int season;
+int t;
+int h;
+
+
+int current_cap[c_id];
+double dist[c_id];
+int count[c_id];
+bool ventilation[c_id];
+bool heating[c_id];
+bool humidifier[c_id];
+bool dehumidifier[c_id];
+bool suggest_exit[c_id];
+bool online[c_id];
+int hum[c_id];
+int temp[c_id];
+bool infos[c_id][u_id];
+int time_lunch[c_id][u_id];
+int cafeteria_cap[c_id];
+
+chan valuesUpdated[c_id];
+chan ok[c_id];
+chan enterQR[c_id];
+chan exitQR[c_id];
+chan full[c_id];
+chan cmd_heating[c_id];
+chan cmd_ventilation[c_id];
+chan cmd_humidifier[c_id];
+chan cmd_dehumidifier[c_id];
+chan cmd_suggestToExit[c_id];
+chan cmd_infoService[c_id];
+chan request[c_id];
+chan deviceAck[c_id];
+chan infoService[c_id];
+chan suggestToExit[c_id];
+chan done[c_id];
+
+void setCurrentCap(c_id i)
+{
+    //int val =  dist[i] - 0.2 ;
+    //cafeteria_cap[i] = ROOM_DIM[i] / val];
+    
+    cafeteria_cap[i] = ROOM_DIM[i];
+
+}</declaration>
+	<template>
+		<name x="5" y="5">Cloud</name>
+		<parameter>const c_id id</parameter>
+		<declaration>// Place local declarations here.</declaration>
+		<location id="id0" x="-799" y="-136">
+			<name x="-850" y="-153">Start</name>
+		</location>
+		<location id="id1" x="-323" y="-119">
+			<name x="-348" y="-169">Consume</name>
+		</location>
+		<location id="id2" x="-587" y="-17">
+			<name x="-646" y="-8">Cafeteria_of_c_id</name>
+		</location>
+		<location id="id3" x="-722" y="-305">
+			<urgent/>
+		</location>
+		<location id="id4" x="-442" y="-297">
+			<name x="-544" y="-305">Temperature</name>
+			<urgent/>
+		</location>
+		<location id="id5" x="-442" y="-297">
+		</location>
+		<location id="id6" x="-153" y="-297">
+			<name x="-238" y="-297">humidity</name>
+			<urgent/>
+		</location>
+		<location id="id7" x="110" y="-297">
+			<name x="42" y="-297">distance</name>
+			<urgent/>
+		</location>
+		<location id="id8" x="-153" y="-297">
+		</location>
+		<location id="id9" x="340" y="-305">
+			<urgent/>
+		</location>
+		<location id="id10" x="365" y="-93">
+			<urgent/>
+		</location>
+		<location id="id11" x="297" y="26">
+			<urgent/>
+		</location>
+		<init ref="id0"/>
+		<transition>
+			<source ref="id11"/>
+			<target ref="id0"/>
+			<label kind="synchronisation" x="-263" y="102">done[id]?</label>
+			<nail x="297" y="94"/>
+			<nail x="-799" y="93"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id11"/>
+			<label kind="assignment" x="374" y="-42">suggest_exit[id] = false</label>
+			<nail x="365" y="26"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id11"/>
+			<label kind="guard" x="68" y="-85">current_cap[id] &gt;= cafeteria_cap[id]</label>
+			<label kind="synchronisation" x="170" y="-59">suggestToExit[id]!</label>
+			<nail x="297" y="-93"/>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id10"/>
+			<label kind="assignment" x="306" y="-178">setCurrentCap(id)</label>
+			<nail x="365" y="-297"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id9"/>
+			<label kind="assignment" x="161" y="-203">dist[id] = 1.5</label>
+			<nail x="110" y="-203"/>
+			<nail x="340" y="-203"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id9"/>
+			<label kind="guard" x="127" y="-441">hum[id] &lt; critical_min_hum ||
+hum[id] &gt; critical_max_hum</label>
+			<label kind="assignment" x="170" y="-399">dist[id] = 2.0</label>
+			<nail x="110" y="-399"/>
+			<nail x="340" y="-399"/>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id6"/>
+			<label kind="assignment" x="-425" y="-220">heating[id] = false,
+ventilation[id] = false</label>
+			<nail x="-442" y="-203"/>
+			<nail x="-255" y="-203"/>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id6"/>
+			<label kind="guard" x="-425" y="-322">temp[id] &gt; temp_max</label>
+			<label kind="synchronisation" x="-425" y="-297">cmd_ventilation[id]!</label>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id6"/>
+			<label kind="guard" x="-416" y="-424">temp[id] &lt; temp_min</label>
+			<label kind="synchronisation" x="-408" y="-399">cmd_heating[id]!</label>
+			<nail x="-442" y="-399"/>
+			<nail x="-246" y="-399"/>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="guard" x="-697" y="-229">season == WINTER</label>
+			<label kind="assignment" x="-680" y="-288">temp_max = 23,
+temp_min = 21,
+hum_max = 50</label>
+			<nail x="-723" y="-229"/>
+			<nail x="-493" y="-229"/>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="guard" x="-688" y="-390">season == SUMMER</label>
+			<label kind="assignment" x="-680" y="-365">temp_max = 26,
+temp_min = 24,
+hum_max = 55</label>
+			<nail x="-723" y="-365"/>
+			<nail x="-493" y="-365"/>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="-246" y="-127">infoService[id]?</label>
+			<nail x="-255" y="-68"/>
+			<nail x="-255" y="-161"/>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id0"/>
+			<label kind="synchronisation" x="-756" y="43">exitQR[id]?</label>
+			<label kind="assignment" x="-756" y="68">count[id]--</label>
+			<nail x="-323" y="68"/>
+			<nail x="-782" y="68"/>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id2"/>
+			<label kind="synchronisation" x="-748" y="-42">enterQR[id]?</label>
+			<nail x="-756" y="-17"/>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id3"/>
+			<label kind="synchronisation" x="-790" y="-195">valuesUpdated[id]?</label>
+			<nail x="-799" y="-305"/>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id0"/>
+			<label kind="guard" x="-569" y="-51">count[id] == MAX_PEOPLE[id]</label>
+			<label kind="synchronisation" x="-739" y="9">full[id]!</label>
+			<nail x="-365" y="-17"/>
+			<nail x="-365" y="34"/>
+			<nail x="-756" y="34"/>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id1"/>
+			<label kind="guard" x="-569" y="-136">count[id] &lt; MAX_PEOPLE[id]</label>
+			<label kind="synchronisation" x="-527" y="-102">ok[id]!</label>
+			<label kind="assignment" x="-536" y="-119">count[id]++</label>
+			<nail x="-587" y="-119"/>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id7"/>
+			<label kind="assignment" x="-136" y="-220">humidifier[id] = false,
+dehumidifier[id] = false</label>
+			<nail x="-153" y="-203"/>
+			<nail x="51" y="-203"/>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id7"/>
+			<label kind="guard" x="-135" y="-331">hum[id] &gt; hum_max</label>
+			<label kind="synchronisation" x="-136" y="-297">cmd_dehumidifier[id]!</label>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id7"/>
+			<label kind="guard" x="-136" y="-424">hum[id] &lt; hum_max</label>
+			<label kind="synchronisation" x="-127" y="-399">cmd_humidifier[id]!</label>
+			<nail x="-153" y="-399"/>
+			<nail x="51" y="-399"/>
+		</transition>
+	</template>
+	<template>
+		<name>Edge</name>
+		<parameter>const c_id id</parameter>
+		<location id="id12" x="-1054" y="-3833">
+			<name x="-1088" y="-3867">Raspberry</name>
+		</location>
+		<location id="id13" x="-833" y="-3833">
+			<name x="-858" y="-3867">Arduino</name>
+		</location>
+		<location id="id14" x="-654" y="-3875">
+			<name x="-671" y="-3918">Real</name>
+			<urgent/>
+		</location>
+		<location id="id15" x="-654" y="-3799">
+			<name x="-688" y="-3782">Predicted</name>
+		</location>
+		<location id="id16" x="-502" y="-3841">
+			<urgent/>
+		</location>
+		<init ref="id12"/>
+		<transition>
+			<source ref="id16"/>
+			<target ref="id12"/>
+			<label kind="synchronisation" x="-986" y="-3731">valuesUpdated[id]!</label>
+			<nail x="-442" y="-3841"/>
+			<nail x="-442" y="-3706"/>
+			<nail x="-1054" y="-3706"/>
+		</transition>
+		<transition>
+			<source ref="id15"/>
+			<target ref="id16"/>
+			<label kind="assignment" x="-578" y="-3799">temp[id] = t, 
+hum[id] = h</label>
+			<nail x="-502" y="-3799"/>
+		</transition>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id16"/>
+			<nail x="-502" y="-3875"/>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id15"/>
+			<label kind="guard" x="-867" y="-3791">timeout &gt; MAX_WAIT_TIME</label>
+			<nail x="-782" y="-3799"/>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id14"/>
+			<label kind="synchronisation" x="-782" y="-3901">deviceAck[id]?</label>
+			<nail x="-782" y="-3875"/>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id13"/>
+			<label kind="guard" x="-1028" y="-3833">time_ask == ASK_PERIOD</label>
+			<label kind="synchronisation" x="-977" y="-3858">request[id]!</label>
+			<label kind="assignment" x="-977" y="-3875">timeout = 0</label>
+		</transition>
+	</template>
+	<template>
+		<name>Device</name>
+		<parameter>const c_id id</parameter>
+		<location id="id17" x="-1334" y="-408">
+			<name x="-1360" y="-442">Arduino</name>
+		</location>
+		<location id="id18" x="-1139" y="-408">
+			<name x="-1165" y="-442">isOnline</name>
+		</location>
+		<location id="id19" x="-935" y="-408">
+			<name x="-969" y="-442">SendValues</name>
+			<urgent/>
+		</location>
+		<init ref="id17"/>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id17"/>
+			<label kind="guard" x="-1299" y="-383">online[id] == false</label>
+			<nail x="-1139" y="-349"/>
+			<nail x="-1317" y="-349"/>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id17"/>
+			<label kind="assignment" x="-1258" y="-315">timeout = 0, temp[id] = t, hum[id] = h</label>
+			<nail x="-935" y="-315"/>
+			<nail x="-1334" y="-315"/>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id19"/>
+			<label kind="guard" x="-1096" y="-408">online[id] == true</label>
+			<label kind="synchronisation" x="-1088" y="-434">deviceAck[id]!</label>
+		</transition>
+		<transition>
+			<source ref="id17"/>
+			<target ref="id18"/>
+			<label kind="synchronisation" x="-1275" y="-425">request[id]?</label>
+		</transition>
+	</template>
+	<template>
+		<name>Administrator</name>
+		<parameter>const c_id id</parameter>
+		<location id="id20" x="-2686" y="-663">
+			<name x="-2737" y="-672">Start</name>
+		</location>
+		<location id="id21" x="-2354" y="-663">
+			<name x="-2337" y="-689">Auctuation</name>
+		</location>
+		<init ref="id20"/>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id20"/>
+			<label kind="synchronisation" x="-2524" y="-467">done[id]!</label>
+			<nail x="-2252" y="-663"/>
+			<nail x="-2252" y="-468"/>
+			<nail x="-2720" y="-468"/>
+			<nail x="-2720" y="-638"/>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id21"/>
+			<label kind="synchronisation" x="-2609" y="-544">cmd_dehumidifier[id]?</label>
+			<label kind="assignment" x="-2601" y="-518">dehumidifier[id] = true</label>
+			<nail x="-2686" y="-519"/>
+			<nail x="-2354" y="-519"/>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id21"/>
+			<label kind="synchronisation" x="-2601" y="-595">cmd_humidifier[id]?</label>
+			<label kind="assignment" x="-2601" y="-570">humidifier[id] = true</label>
+			<nail x="-2643" y="-570"/>
+			<nail x="-2405" y="-570"/>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id21"/>
+			<label kind="synchronisation" x="-2592" y="-689">suggestToExit[id]?</label>
+			<label kind="assignment" x="-2593" y="-663">suggest_exit[id] = true</label>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id21"/>
+			<label kind="synchronisation" x="-2592" y="-782">cmd_ventilation[id]?</label>
+			<label kind="assignment" x="-2592" y="-757">ventilation[id] = true</label>
+			<nail x="-2669" y="-757"/>
+			<nail x="-2371" y="-757"/>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id21"/>
+			<label kind="synchronisation" x="-2584" y="-833">cmd_heating[id]?</label>
+			<label kind="assignment" x="-2584" y="-808">heating[id] = true</label>
+			<nail x="-2686" y="-808"/>
+			<nail x="-2354" y="-808"/>
+		</transition>
+	</template>
+	<template>
+		<name>User</name>
+		<parameter>const u_id j, const c_id id</parameter>
+		<declaration>
+</declaration>
+		<location id="id22" x="-178" y="-170">
+			<name x="-195" y="-204">User</name>
+		</location>
+		<location id="id23" x="-42" y="-170">
+		</location>
+		<location id="id24" x="76" y="-170">
+			<name x="51" y="-204">Consume</name>
+		</location>
+		<location id="id25" x="263" y="-170">
+			<name x="237" y="-204">AskInformation</name>
+		</location>
+		<location id="id26" x="76" y="-76">
+			<name x="85" y="-110">Exit</name>
+			<label kind="invariant" x="-85" y="-93">time_lunch[id][j]&gt;20 &amp;&amp; 
+time_lunch[id][j]&lt;50</label>
+		</location>
+		<init ref="id22"/>
+		<transition>
+			<source ref="id25"/>
+			<target ref="id26"/>
+			<label kind="synchronisation" x="272" y="-153">infoService[id]!</label>
+			<nail x="263" y="-76"/>
+		</transition>
+		<transition>
+			<source ref="id24"/>
+			<target ref="id26"/>
+			<label kind="guard" x="8" y="-136">infos[id][j] == false</label>
+		</transition>
+		<transition>
+			<source ref="id24"/>
+			<target ref="id25"/>
+			<label kind="guard" x="110" y="-170">infos[id][j] == true</label>
+			<nail x="93" y="-170"/>
+		</transition>
+		<transition>
+			<source ref="id26"/>
+			<target ref="id22"/>
+			<label kind="synchronisation" x="-76" y="-8">exitQR[id]!</label>
+			<nail x="76" y="-9"/>
+			<nail x="-178" y="-8"/>
+		</transition>
+		<transition>
+			<source ref="id23"/>
+			<target ref="id22"/>
+			<label kind="synchronisation" x="-127" y="-136">full[id]?</label>
+			<nail x="-42" y="-110"/>
+			<nail x="-153" y="-110"/>
+		</transition>
+		<transition>
+			<source ref="id23"/>
+			<target ref="id24"/>
+			<label kind="synchronisation" x="0" y="-195">ok[id]?</label>
+		</transition>
+		<transition>
+			<source ref="id22"/>
+			<target ref="id23"/>
+			<label kind="synchronisation" x="-144" y="-195">enterQR[id]!</label>
+		</transition>
+	</template>
+	<system>
+// List one or more processes to be composed into a system.
+system Cloud, User, Administrator, Edge, Device;
+    </system>
+	<queries>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+	</queries>
+</nta>
